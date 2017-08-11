@@ -1,20 +1,28 @@
 const http = require('http')
+const config = require('./config')
 
-let myRes
+let serverResponse
 
 const server = http.createServer((req, res) => {
-  myRes = res
-  myRes.writeHead(200, {'Content-Type': 'text/event-stream; charset=utf-8'});
+  serverResponse = res
+  serverResponse.writeHead(200, {'Content-Type': 'text/event-stream; charset=utf-8'});
 });
 
-const plugStream = (url, port, path, name) => {
+let services = {}
+
+const plugStream = (name, url, port, path) => {
+  console.log(`[INFO] Attempting to connect to http://${url}:${port}/${path}`)
   let streamData = ''
   const req = http.request({
     hostname: url,
     port: port,
     path: path,
     method: 'get'
-  }, (res) => {
+  }, (res, err) => {
+    if (err) {
+      console.log(err)
+      return
+    }
     res.setEncoding('utf8')
     res.on('data', chunk => {
       streamData += chunk
@@ -23,11 +31,11 @@ const plugStream = (url, port, path, name) => {
       }
       let endOfStream = streamData.indexOf('\n\n')
       while (endOfStream > -1) {
-        if (myRes) {
-          myRes.write(`\ndata:{"name": "${name}", "url": "http://${url}:${port}",`)
-          myRes.write('"data":' + streamData.substring(5, endOfStream) + "}\n")
+        services[name] = services[name] ? services[name] + 1 : 1
+        if (serverResponse) {
+          serverResponse.write(`\ndata:{"name": "${name}", "url": "http://${url}:${port}",`)
+          serverResponse.write('"data":' + streamData.substring(5, endOfStream) + "}\n")
         }
-
         streamData = streamData.substring(endOfStream + 2)
         endOfStream = streamData.indexOf('\n\n')
       }
@@ -36,21 +44,25 @@ const plugStream = (url, port, path, name) => {
       res.end()
     })
   })
-  req.end()
+  req.on('error', e => {
+    console.error(`[ERROR] http://${url}:${port}/${path} [${name}] -`, e.message)
+  })
 }
 
-plugStream('10.8.5.54', 8080, '/turbine.stream?cluster=realtimeconsumption', 'realtimeconsumption')
-plugStream('10.8.5.54', 8080, '/turbine.stream?cluster=attendancerecord', 'attendancerecord')
-plugStream('10.8.5.54', 8080, '/turbine.stream?cluster=featureflag', 'featureflag')
-plugStream('10.8.5.54', 8080, '/turbine.stream?cluster=services', 'services')
-plugStream('10.8.5.54', 8080, '/turbine.stream?cluster=bonus', 'bonus')
-plugStream('10.8.5.54', 8080, '/turbine.stream?cluster=plan', 'plan')
-plugStream('10.8.5.54', 8080, '/turbine.stream?cluster=customer', 'customer')
-plugStream('10.8.5.54', 8080, '/turbine.stream?cluster=authentication', 'authentication')
-plugStream('10.8.5.54', 8080, '/turbine.stream?cluster=sms', 'sms')
-plugStream('10.8.5.54', 8080, '/turbine.stream?cluster=billing', 'billing')
-plugStream('10.8.5.54', 8080, '/turbine.stream?cluster=payment', 'payment')
-plugStream('10.8.5.54', 8080, '/turbine.stream?cluster=mail', 'mail')
+setInterval(() => {
+  if (Object.keys(services).length) {
+    console.log(JSON.stringify(services))
+    services = {}
+  } else {
+    console.log('No services received complete chunks.')
+  }
+}, 2500)
+
+for (const serviceName in config) {
+  const [host, port, path] = config[serviceName]
+  plugStream(serviceName, host, port, path)
+}
 
 // Point your browser to http://localhost:3000 and see the magic
 server.listen(3000)
+console.log("\n======\nApplication is running, point your browser to http://localhost:3000 and see the magic.\nHit CTRL+C to stop\n======\n")

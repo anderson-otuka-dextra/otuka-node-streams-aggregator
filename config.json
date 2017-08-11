@@ -1,0 +1,50 @@
+{
+    "realtimeconsumption": [
+        "10.8.5.54", 8080,
+        "turbine.stream?cluster=realtimeconsumption"
+    ],
+    "attendancerecord": [
+        "10.8.5.54", 8080,
+        "turbine.stream?cluster=attendancerecord"
+    ],
+    "featureflag": [
+        "10.8.5.54", 8080,
+        "turbine.stream?cluster=featureflag"
+    ],
+    "services": [
+        "10.8.5.54", 8080,
+        "turbine.stream?cluster=services"
+    ],
+    "bonus": [
+        "10.8.5.54", 8080,
+        "turbine.stream?cluster=bonus"
+    ],
+    "plan": [
+        "10.8.5.54", 8080,
+        "turbine.stream?cluster=plan"
+    ],
+    "customer": [
+        "10.8.5.54", 8080,
+        "turbine.stream?cluster=customer"
+    ],
+    "authentication": [
+        "10.8.5.54", 8080,
+        "turbine.stream?cluster=authentication"
+    ],
+    "sms": [
+        "10.8.5.54", 8080,
+        "turbine.stream?cluster=sms"
+    ],
+    "billing": [
+        "10.8.5.54", 8080,
+        "turbine.stream?cluster=billing"
+    ],
+    "payment": [
+        "10.8.5.54", 8080,
+        "turbine.stream?cluster=payment"
+    ],
+    "mail": [
+        "10.8.5.54", 8080,
+        "turbine.stream?cluster=mail"
+    ]
+}
