@@ -2,15 +2,14 @@ const http = require('http')
 const config = require('./config')
 
 let serverResponse
+let services = {}
 
 const server = http.createServer((req, res) => {
   serverResponse = res
   serverResponse.writeHead(200, {'Content-Type': 'text/event-stream; charset=utf-8'});
 });
 
-let services = {}
-
-const plugStream = (name, url, port, path) => {
+const plugStream = (url, port, path, name) => {
   console.log(`[INFO] Attempting to connect to http://${url}:${port}/${path}`)
   let streamData = ''
   const req = http.request({
@@ -18,11 +17,7 @@ const plugStream = (name, url, port, path) => {
     port: port,
     path: path,
     method: 'get'
-  }, (res, err) => {
-    if (err) {
-      console.log(err)
-      return
-    }
+  }, (res) => {
     res.setEncoding('utf8')
     res.on('data', chunk => {
       streamData += chunk
@@ -36,6 +31,7 @@ const plugStream = (name, url, port, path) => {
           serverResponse.write(`\ndata:{"name": "${name}", "url": "http://${url}:${port}",`)
           serverResponse.write('"data":' + streamData.substring(5, endOfStream) + "}\n")
         }
+
         streamData = streamData.substring(endOfStream + 2)
         endOfStream = streamData.indexOf('\n\n')
       }
@@ -47,6 +43,7 @@ const plugStream = (name, url, port, path) => {
   req.on('error', e => {
     console.error(`[ERROR] http://${url}:${port}/${path} [${name}] -`, e.message)
   })
+  req.end()
 }
 
 setInterval(() => {
@@ -60,9 +57,8 @@ setInterval(() => {
 
 for (const serviceName in config) {
   const [host, port, path] = config[serviceName]
-  plugStream(serviceName, host, port, path)
+  plugStream(host, port, '/' + path, serviceName)
 }
 
-// Point your browser to http://localhost:3000 and see the magic
 server.listen(3000)
 console.log("\n======\nApplication is running, point your browser to http://localhost:3000 and see the magic.\nHit CTRL+C to stop\n======\n")
