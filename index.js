@@ -10,7 +10,7 @@ const server = http.createServer((req, res) => {
 });
 
 const plugStream = (url, port, path, name) => {
-  console.log(`[INFO] Attempting to connect to http://${url}:${port}/${path}`)
+  console.log(`[INFO] Attempting to connect to http://${url}:${port}${path}`)
   let streamData = ''
   const req = http.request({
     hostname: url,
